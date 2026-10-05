@@ -1,0 +1,8 @@
+__pycache__/
+*.so
+*.plan
+*.onnx
+*.onnx.data
+*.npz
+*.nemo
+/data/

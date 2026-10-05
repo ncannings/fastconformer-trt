@@ -1,0 +1,19 @@
+{
+ "ultra_stock": {
+  "wer": 10.027,
+  "rtf": 937
+ },
+ "ultra_ours": {
+  "wer": 10.074,
+  "rtf": 4671
+ },
+ "v3_stock": {
+  "wer": 11.092,
+  "rtf": 916
+ },
+ "v3_ours": {
+  "wer": 10.939,
+  "rtf": 4253
+ },
+ "note": "Open ASR Leaderboard Earnings-22 test (hf-audio/open-asr-leaderboard, 2,741 utterances), full set; Whisper English normaliser; 2,200 MHz cap; v3 engine = the earlier batch-32 configuration"
+}

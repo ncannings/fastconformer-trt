@@ -1,0 +1,23 @@
+{
+ "global_scratch": 0,
+ "name": "_relpos_attn",
+ "shared": 45184,
+ "num_warps": 4,
+ "BM": 32,
+ "params": [
+  ".param .u64 .ptr .global .align 1 _relpos_attn_param_0",
+  ".param .u64 .ptr .global .align 1 _relpos_attn_param_1",
+  ".param .u64 .ptr .global .align 1 _relpos_attn_param_2",
+  ".param .u64 .ptr .global .align 1 _relpos_attn_param_3",
+  ".param .u64 .ptr .global .align 1 _relpos_attn_param_4",
+  ".param .u64 .ptr .global .align 1 _relpos_attn_param_5",
+  ".param .u64 .ptr .global .align 1 _relpos_attn_param_6",
+  ".param .u64 .ptr .global .align 1 _relpos_attn_param_7",
+  ".param .u32 _relpos_attn_param_8",
+  ".param .u32 _relpos_attn_param_9",
+  ".param .u32 _relpos_attn_param_10",
+  ".param .u32 _relpos_attn_param_11",
+  ".param .f32 _relpos_attn_param_12",
+  ".param .u64 .ptr .global .align 1 _relpos_attn_param_13"
+ ]
+}

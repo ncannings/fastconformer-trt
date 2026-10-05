@@ -1,0 +1,24 @@
+{
+ "idle_w": 75.8,
+ "stock": {
+  "wer_test_clean": 1.386,
+  "rtf": 684,
+  "mean_w": 188.7,
+  "max_w": 196.0,
+  "J_per_audio_h_gross": 992.5,
+  "J_per_audio_h_net": 594.0,
+  "sm_mhz_loaded_mean": 2363,
+  "temp_max_c": 84.0
+ },
+ "final": {
+  "wer_test_clean": 1.392,
+  "rtf": 2991,
+  "mean_w": 190.4,
+  "max_w": 194.0,
+  "J_per_audio_h_gross": 279.1,
+  "J_per_audio_h_net": 168.1,
+  "sm_mhz_loaded_mean": 2199,
+  "temp_max_c": 83.0
+ },
+ "speedup": 4.37
+}
