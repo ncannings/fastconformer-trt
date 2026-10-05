@@ -110,9 +110,9 @@ or not the clock is capped at 2,200 MHz.
 ## Quick start
 
 Requirements: a DGX Spark or another sm_120-family Blackwell GPU, Docker with the NVIDIA container toolkit, and
-access to NGC (`nvcr.io/nvidia/nemo:25.11`). The plugins are compiled for `compute_120f`. A Hopper build (GH200,
-H100) compiles with `FC_SM=90` (FP8 paths only; the sparse and NVFP4 options refuse with an error) but has not yet been
-measured on hardware. Datacentre Blackwell (sm_100) needs a port of the CUTLASS kernels.
+access to NGC (`nvcr.io/nvidia/nemo:25.11`). The plugins are compiled for `compute_120f`. Builds for Hopper (GH200,
+H100: `FC_SM=90`) and datacentre Blackwell (B200, GB200: `FC_SM=100`) compile, with the FP8 paths only (the sparse and
+NVFP4 options refuse with an error); they have not yet been measured on hardware.
 
 ```bash
 # 1. image: NeMo 25.11 + scoring packages + CUTLASS 4.8
@@ -203,7 +203,7 @@ results/                 headline summaries and per-language FLEURS results
 
 - Offline batch transcription. Streaming is not addressed.
 - Utterances up to 60 s per segment (the engine's input profile); longer audio needs segmenting.
-- Measured on the sm_120 family (DGX Spark) only. The Hopper build compiles but is untested; sm_100 is not ported.
+- Measured on the sm_120 family (DGX Spark) only. The Hopper and sm_100 builds compile but are untested.
   The engine build is per machine.
 - The pipeline is not bit-for-bit deterministic run to run (differences at the 0.03 WER level on test-clean).
 

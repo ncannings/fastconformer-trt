@@ -28,8 +28,13 @@ namespace qkvh {
 using E4M3 = cutlass::float_e4m3_t;
 using Half = cutlass::half_t;
 namespace fus = cutlass::epilogue::fusion;
-// Epilogue schedule per mainloop schedule: sm_120 accepts Auto with fused (EVT) epilogues; sm_90 needs the explicit
-// TMA warp-specialised epilogue that matches the mainloop.
+// Per-architecture schedules. sm_120 accepts Auto epilogues with fused (EVT) epilogues; sm_90 needs the explicit TMA
+// warp-specialised epilogue matching the mainloop; sm_100 (datacentre Blackwell) runs every GEMM as a 1-SM UMMA kernel.
+#if defined(FC_SM100)
+template <class MainSched> struct MainFor { using type = cutlass::gemm::KernelTmaWarpSpecialized1SmSm100; };
+template <class MainSched> struct EpiFor { using type = cutlass::epilogue::TmaWarpSpecialized1Sm; };
+#else
+template <class MainSched> struct MainFor { using type = MainSched; };
 template <class MainSched> struct EpiFor { using type = cutlass::epilogue::collective::EpilogueScheduleAuto; };
 #if defined(FC_SM90)
 template <> struct EpiFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative> {
@@ -39,10 +44,13 @@ template <> struct EpiFor<cutlass::gemm::KernelTmaWarpSpecializedPingpong> {
   using type = cutlass::epilogue::TmaWarpSpecialized;
 };
 #endif
+#endif
 
 constexpr auto kRound = cutlass::FloatRoundStyle::round_to_nearest;
 using Cluster = Shape<_1, _1, _1>;
-#if defined(FC_SM90)
+#if defined(FC_SM100)
+using ArchQ = cutlass::arch::Sm100;
+#elif defined(FC_SM90)
 using ArchQ = cutlass::arch::Sm90;
 #else
 using ArchQ = cutlass::arch::Sm120;
@@ -65,7 +73,7 @@ struct G {
       ArchQ, cutlass::arch::OpClassTensorOp, E4M3, cutlass::layout::RowMajor, 16, E4M3,
       cutlass::layout::ColumnMajor, 16, float, Tile, Cluster,
       cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename CollEpi::SharedStorage))>,
-      Sched>::CollectiveOp;
+      typename MainFor<Sched>::type>::CollectiveOp;
   using Kernel = cutlass::gemm::kernel::GemmUniversal<Shape<int, int, int, int>, CollMain, CollEpi, void>;
   using Gemm = cutlass::gemm::device::GemmUniversalAdapter<Kernel>;
 };
@@ -115,7 +123,9 @@ int qkv_heads_run(const void* x8, const void* w8, const float* bias, void* out_q
   if (dk != 128) return 1;
   switch (v) {
     case 1: return run<G<128, 128, 128, Coop>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
+#if !defined(FC_SM100)                                // 1-SM UMMA on sm_100 allows tile M of 64 or 128 only
     case 2: return run<G<128, 256, 64, Coop>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
+#endif
     case 3: return run<G<128, 128, 64, Ping>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
     case 4: return run<G<128, 128, 64, Coop>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
     case 5: return run<G<128, 64, 128, Ping>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);

@@ -34,7 +34,9 @@ using LayoutB = cutlass::layout::ColumnMajor;
 using LayoutD = cutlass::layout::RowMajor;
 constexpr int kAlign8 = 16;  // 128-bit accesses of 8-bit elements
 constexpr int kAlign16 = 8;  // of 16-bit elements
-#if defined(FC_SM90)
+#if defined(FC_SM100)
+using Arch = cutlass::arch::Sm100;    // datacentre Blackwell (B200, GB200)
+#elif defined(FC_SM90)
 using Arch = cutlass::arch::Sm90;     // Hopper (GH200 / H100): same TMA warp-specialised FP8 kernels
 #else
 using Arch = cutlass::arch::Sm120;    // Blackwell sm_120 family (DGX Spark GB10, RTX Pro)
@@ -44,8 +46,13 @@ using Cluster = Shape<_1, _1, _1>;
 constexpr auto kRound = cutlass::FloatRoundStyle::round_to_nearest;
 
 namespace fus = cutlass::epilogue::fusion;
-// Epilogue schedule per mainloop schedule: sm_120 accepts Auto with fused (EVT) epilogues; sm_90 needs the explicit
-// TMA warp-specialised epilogue that matches the mainloop.
+// Per-architecture schedules. sm_120 accepts Auto epilogues with fused (EVT) epilogues; sm_90 needs the explicit TMA
+// warp-specialised epilogue matching the mainloop; sm_100 (datacentre Blackwell) runs every GEMM as a 1-SM UMMA kernel.
+#if defined(FC_SM100)
+template <class MainSched> struct MainFor { using type = cutlass::gemm::KernelTmaWarpSpecialized1SmSm100; };
+template <class MainSched> struct EpiFor { using type = cutlass::epilogue::TmaWarpSpecialized1Sm; };
+#else
+template <class MainSched> struct MainFor { using type = MainSched; };
 template <class MainSched> struct EpiFor { using type = cutlass::epilogue::collective::EpilogueScheduleAuto; };
 #if defined(FC_SM90)
 template <> struct EpiFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative> {
@@ -54,6 +61,7 @@ template <> struct EpiFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative> {
 template <> struct EpiFor<cutlass::gemm::KernelTmaWarpSpecializedPingpong> {
   using type = cutlass::epilogue::TmaWarpSpecialized;
 };
+#endif
 #endif
 
 
@@ -79,7 +87,7 @@ struct GemmRes {
   using CollMain = typename cutlass::gemm::collective::CollectiveBuilder<
       Arch, OpClass, E4M3, LayoutA, kAlign8, E4M3, LayoutB, kAlign8, Acc, Tile, Cluster,
       cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename CollEpi::SharedStorage))>,
-      cutlass::gemm::KernelTmaWarpSpecializedCooperative>::CollectiveOp;
+      typename MainFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative>::type>::CollectiveOp;
   using Kernel = cutlass::gemm::kernel::GemmUniversal<Shape<int, int, int, int>, CollMain, CollEpi, void>;
   using Gemm = cutlass::gemm::device::GemmUniversalAdapter<Kernel>;
 };
@@ -112,7 +120,7 @@ struct GemmResB {
   using CollMain = typename cutlass::gemm::collective::CollectiveBuilder<
       Arch, OpClass, E4M3, LayoutA, kAlign8, E4M3, LayoutB, kAlign8, Acc, Tile, Cluster,
       cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename CollEpi::SharedStorage))>,
-      cutlass::gemm::KernelTmaWarpSpecializedCooperative>::CollectiveOp;
+      typename MainFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative>::type>::CollectiveOp;
   using Kernel = cutlass::gemm::kernel::GemmUniversal<Shape<int, int, int, int>, CollMain, CollEpi, void>;
   using Gemm = cutlass::gemm::device::GemmUniversalAdapter<Kernel>;
 };
@@ -132,7 +140,7 @@ struct GemmGlu {
   using CollMain = typename cutlass::gemm::collective::CollectiveBuilder<
       Arch, OpClass, E4M3, LayoutA, kAlign8, E4M3, LayoutB, kAlign8, Acc, Tile, Cluster,
       cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename CollEpi::SharedStorage))>,
-      cutlass::gemm::KernelTmaWarpSpecializedCooperative>::CollectiveOp;
+      typename MainFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative>::type>::CollectiveOp;
   using Kernel = cutlass::gemm::kernel::GemmUniversal<Shape<int, int, int, int>, CollMain, CollEpi, void>;
   using Gemm = cutlass::gemm::device::GemmUniversalAdapter<Kernel>;
 };
@@ -146,7 +154,7 @@ struct GemmT {
   using CollMain = typename cutlass::gemm::collective::CollectiveBuilder<
       Arch, OpClass, E4M3, LayoutA, kAlign8, E4M3, LayoutB, kAlign8, Acc, Tile, Cluster,
       cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename CollEpi::SharedStorage))>,
-      Sched>::CollectiveOp;
+      typename MainFor<Sched>::type>::CollectiveOp;
   using Kernel = cutlass::gemm::kernel::GemmUniversal<Shape<int, int, int, int>, CollMain, CollEpi, void>;
   using Gemm = cutlass::gemm::device::GemmUniversalAdapter<Kernel>;
 };
