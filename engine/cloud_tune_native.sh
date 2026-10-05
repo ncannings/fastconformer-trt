@@ -33,7 +33,7 @@ for v in 0 1 2 3 4 5 6 7 8 9; do QKV_V=$v python tune_kernels.py qkv 2>/dev/null
 best() { python3 -c "
 import json,sys
 rows=[json.loads(l) for l in open('$R/'+sys.argv[1]) if l.startswith('{')]
-ok=[r for r in rows if r.get('rc')==0 and r.get('rel_err',1)<1e-3 and 'ms' in r]
+ok=[r for r in rows if r.get('rc')==0 and r.get('rel_err',1)<5e-3 and 'ms' in r]   # FP8 rounding level is 2e-4 to 1e-3
 b=min(ok,key=lambda r:r['ms']) if ok else {}
 print(b.get(sys.argv[2]) or sys.argv[3])" "$@"; }
 export FFN_V1=$(best sweep_v1.jsonl FFN_V1 1); export FFN_VR=$(FFN_V1=$FFN_V1 best sweep_vr.jsonl FFN_VR -1)
