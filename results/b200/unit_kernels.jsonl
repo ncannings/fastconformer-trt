@@ -1,0 +1,3 @@
+{"what": "ffn", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.00020965086878277361, "ms": 0.1304, "tflops": 823.1}
+{"what": "lin", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.00020700073218904436, "ms": 0.0152, "tflops": 884.9}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.00020760537881869823, "ms": 0.031, "tflops": 1297.5}

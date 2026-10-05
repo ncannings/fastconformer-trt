@@ -1,0 +1,2 @@
+name, driver_version, clocks.max.sm [MHz], power.limit [W], memory.total [MiB], compute_cap
+NVIDIA B200, 595.71.05, 1965 MHz, 1000.00 W, 183359 MiB, 10.0

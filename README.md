@@ -62,18 +62,19 @@ The 1.1B rows were measured before the last round of optimisations (frame-budget
 residual folding, fused subsampling), which added about 6% on the 0.6B models. The 110M is a much smaller,
 English-only model; it is fast but about 25% worse on LibriSpeech than the 0.6B models.
 
-### On a datacentre GPU: NVIDIA GH200
+### On datacentre GPUs: GH200 and B200
 
-The same engine on a rented GH200 (Hopper, 900 W), Ultra, same test sets and runner:
+The same engine on rented datacentre GPUs, Ultra, same test sets and runner (default clocks, throughput figures):
 
-| GH200, parakeet-ultra | test-clean | Earnings-22 (full) | Real-time factor |
+| parakeet-ultra | Stock NeMo (test-clean / Earnings-22 / RTF) | fastconformer-trt (test-clean / Earnings-22 / RTF) | Speed-up |
 |---|---|---|---|
-| Stock NeMo | 1.801% | 10.03% | 3,873x |
-| **fastconformer-trt, Hopper configuration** | **1.820%** | **10.04%** | **22,776x (5.9x)** |
+| NVIDIA GH200 (Hopper) | 1.801 / 10.03 / 3,873x | 1.820 / 10.04 / **22,776x** | 5.9x |
+| NVIDIA B200 (Blackwell) | 1.808 / 10.05 / 5,743x | 1.816 / 10.05 / **25,073x** | 4.4x |
 
-Hopper wants a different mix from the Spark: TensorRT's own FP8 GEMMs beat our Spark-tuned CUTLASS kernels for the
-large matrix multiplies, while the fused attention and fused subsampling plugins remain essential (without the
-subsampling plugin the GH200 engine runs at 1,216x). See [docs/06-gh200.md](docs/06-gh200.md).
+On both, TensorRT's own FP8 GEMMs beat our Spark-tuned CUTLASS kernels for the large matrix multiplies, while the
+fused attention and fused subsampling plugins remain essential (without the subsampling plugin the GH200 runs at
+1,216x). On datacentre GPUs the TDT decoder becomes the main limit. See [docs/06-gh200.md](docs/06-gh200.md) and
+[docs/07-b200.md](docs/07-b200.md).
 
 ## Choosing a speed / accuracy point
 
@@ -124,8 +125,9 @@ or not the clock is capped at 2,200 MHz.
 
 Requirements: a DGX Spark or another sm_120-family Blackwell GPU, Docker with the NVIDIA container toolkit, and
 access to NGC (`nvcr.io/nvidia/nemo:25.11`). The plugins are compiled for `compute_120f`. Hopper (GH200,
-H100) builds with `FC_SM=90` and has been measured (see above); datacentre Blackwell (B200, GB200) builds with
-`FC_SM=100` but is not yet measured. Both carry the FP8 paths only (the sparse and NVFP4 options refuse with an error).
+H100) builds with `FC_SM=90` and datacentre Blackwell (B200, GB200) with `FC_SM=100`; both are measured (see above)
+and carry the FP8 paths only (the sparse and NVFP4 options refuse with an error). On machines that are themselves the
+NeMo container (no Docker, e.g. RunPod), use `NATIVE=1` builds and `engine/cloud_run_native.sh`.
 
 ```bash
 # 1. image: NeMo 25.11 + scoring packages + CUTLASS 4.8
@@ -218,7 +220,7 @@ results/                 headline summaries and per-language FLEURS results
 
 - Offline batch transcription. Streaming is not addressed.
 - Utterances up to 60 s per segment (the engine's input profile); longer audio needs segmenting.
-- Measured on the DGX Spark (sm_121) and a GH200 (sm_90). The sm_100 (B200) build compiles but is untested.
+- Measured on the DGX Spark (sm_121), a GH200 (sm_90) and a B200 (sm_100).
   The engine build is per machine.
 - The pipeline is not bit-for-bit deterministic run to run (differences at the 0.03 WER level on test-clean).
 
