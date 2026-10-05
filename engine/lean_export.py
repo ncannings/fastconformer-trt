@@ -109,9 +109,10 @@ def loop(enc):
 mtq.quantize(lean, cfg, loop)
 ATTN_PLUGIN = os.environ.get("LEAN_ATTN_PLUGIN", "0") == "1"
 if QKV_PLUGIN:
-    lean.prepare_qkv_plugin()
-    lean.attn_plugin = ATTN_PLUGIN             # emit QKVHeads nodes in the FP8 export (after calibration)
-    if ATTN_PLUGIN and os.environ.get("LEAN_POSCACHE", "0") == "1":
+    lean.prepare_qkv_plugin()                  # emit QKVHeads nodes in the FP8 export (after calibration)
+if ATTN_PLUGIN:
+    lean.attn_plugin = True                    # RelPosAttn, with q/k/v from QKVHeads or from TensorRT's own GEMM
+    if os.environ.get("LEAN_POSCACHE", "0") == "1":
         lean.prepare_pos_cache()
         with torch.no_grad():   # exact check of the slicing: cached rows vs a full-precision projection of NeMo's pos_emb
             worst = 0.0

@@ -7,8 +7,12 @@ LK="flock /tmp/fastconformer-trt.lock"; [ -n "$NOLOCK" ] && LK=""
 D=$1; cd $(dirname $0)
 TAG=$(python3 -c "import os;print(('_pm1' if os.environ.get('LEAN_PREMASK_ONCE')=='1' else '')+('_h' if os.environ.get('LEAN_HALF')=='1' else '')+('_dws' if os.environ.get('LEAN_DWSHIFT')=='1' else '')+('_rs' if os.environ.get('LEAN_RELSHIFT')=='1' else '')+('_hb' if os.environ.get('LEAN_HB')=='1' else '')+('_qkv' if os.environ.get('LEAN_QKV')=='1' or os.environ.get('LEAN_QKV_PLUGIN')=='1' else '')+('p' if os.environ.get('LEAN_QKV_PLUGIN')=='1' else '')+('_attn' if os.environ.get('LEAN_ATTN_PLUGIN')=='1' else ''))")
 $R lean_export.py /data/$D 2>&1 | grep -E "EQUIV|POSCACHE|position table|calibration:|Traceback|Error" | head -6
+FIN=/data/$D/ffn.onnx
+if [ "${FFN_SKIP:-0}" = 1 ]; then FIN=/data/$D/$(basename $(ls -t ${ASR_DATA_DIR:-$HOME/asr_data}/$D/lean*_fp8.onnx | head -1)); echo "FF blocks left to TensorRT (FFN_SKIP=1)"; else
 FFN_RESIDUAL=${FFN_RESIDUAL:-0} FFN_SPARSE=${FFN_SPARSE:-0} $R plugins/ffn_surgery.py /data/$D/$(basename $(ls -t ${ASR_DATA_DIR:-$HOME/asr_data}/$D/lean*_fp8.onnx | head -1)) /data/$D/ffn.onnx 2>&1 | grep -E "replaced|Traceback" | head -2
-QKV_SPARSE=${QKV_SPARSE:-0} $R plugins/qkv_surgery.py /data/$D/ffn.onnx /data/$D/ffn_q.onnx /data/$D/$(basename $(ls -t ${ASR_DATA_DIR:-$HOME/asr_data}/$D/lean*_fp8.qkv.npz | head -1)) 2>&1 | grep -E "rewired|attached|Traceback" | head -3
+fi
+NPZ=$(ls -t ${ASR_DATA_DIR:-$HOME/asr_data}/$D/lean*_fp8.qkv.npz 2>/dev/null | head -1)   # side data only with LEAN_QKV_PLUGIN
+QKV_SPARSE=${QKV_SPARSE:-0} $R plugins/qkv_surgery.py $FIN /data/$D/ffn_q.onnx ${NPZ:+/data/$D/$(basename $NPZ)} 2>&1 | grep -E "rewired|attached|Traceback" | head -3
 Q=ffn_q; if [ "${SP_LINEAR:-0}" = 1 ]; then $R plugins/sparse_surgery.py /data/$D/ffn_q.onnx /data/$D/ffn_qs.onnx 2>&1 | grep -E "sparse:|dense:|Traceback|refusing|SP_DENSE" | head -2; Q=ffn_qs; fi
 if [ "${GLU_FUSE:-0}" = 1 ]; then $R plugins/glu_surgery.py /data/$D/$Q.onnx /data/$D/${Q}g.onnx 2>&1 | grep -E "glu:|Traceback|expected|not found" | head -2; Q=${Q}g; fi
 # SubConv02 fuses the subsampling as masked once (LEAN_PREMASK_ONCE=1); NeMo's per-layer masking is left unfused

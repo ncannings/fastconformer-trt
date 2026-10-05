@@ -1,24 +1,24 @@
 {
- "idle_w": 74.3,
+ "idle_w": 68.3,
  "stock": {
   "wer_test_clean": 2.433,
-  "rtf": 2374,
-  "mean_w": 162.2,
-  "max_w": 176.0,
-  "J_per_audio_h_gross": 245.9,
-  "J_per_audio_h_net": 133.2,
-  "sm_mhz_loaded_mean": 2393,
-  "temp_max_c": 79.0
+  "rtf": 2397,
+  "mean_w": 159.9,
+  "max_w": 171.0,
+  "J_per_audio_h_gross": 240.4,
+  "J_per_audio_h_net": 137.7,
+  "sm_mhz_loaded_mean": 2416,
+  "temp_max_c": 78.0
  },
  "final": {
-  "wer_test_clean": 2.465,
-  "rtf": 11222,
-  "mean_w": 175.1,
-  "max_w": 189.0,
-  "J_per_audio_h_gross": 67.4,
-  "J_per_audio_h_net": 38.8,
-  "sm_mhz_loaded_mean": 2337,
-  "temp_max_c": 76.0
+  "wer_test_clean": 2.453,
+  "rtf": 12109,
+  "mean_w": 176.2,
+  "max_w": 185.0,
+  "J_per_audio_h_gross": 63.8,
+  "J_per_audio_h_net": 39.1,
+  "sm_mhz_loaded_mean": 2407,
+  "temp_max_c": 74.0
  },
- "speedup": 4.73
+ "speedup": 5.05
 }

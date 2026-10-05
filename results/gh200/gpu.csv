@@ -1,0 +1,4 @@
+name, driver_version, clocks.max.sm [MHz], power.limit [W], memory.total [MiB]
+NVIDIA GH200 480GB, 570.148.08, 1980 MHz, 900.00 W, 97871 MiB
+clocks.current.sm [MHz], power.draw [W], temperature.gpu
+1980 MHz, 122.54 W, 41

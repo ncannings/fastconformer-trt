@@ -1,0 +1,41 @@
+{
+ "engine": "/data/ultra_t1/engine.plan",
+ "batch": 32,
+ "dec_batch": 256,
+ "pipeline": true,
+ "dec_bf16": true,
+ "cpu_pre": false,
+ "pre_compile": true,
+ "fast_hyps": true,
+ "ckpt": "",
+ "dec_streams": 1,
+ "dec_priority": false,
+ "fast_joint": true,
+ "green": 0,
+ "frame_budget": 19200,
+ "max_batch": 128,
+ "test_clean": 1.8254162816572064,
+ "hyps": {
+  "test_clean": null,
+  "earnings22_full": null
+ },
+ "earnings22_full": 10.06973557741467,
+ "stages_s": {
+  "pre": 0.0717475414276123,
+  "enc": 0.7780170440673828,
+  "dec": 0.3858606815338135
+ },
+ "audio_s": 19452.480625,
+ "walls_s": [
+  1.006939172744751,
+  1.0055549144744873,
+  1.0089514255523682,
+  1.0066843032836914,
+  1.0060226917266846
+ ],
+ "rtf": 19323.31770898601,
+ "timed_window": [
+  1791184753.6903725,
+  1791184759.9667983
+ ]
+}

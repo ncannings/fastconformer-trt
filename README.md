@@ -53,14 +53,27 @@ Controlled stock-machine runs, test-clean, stock weights:
 | Model | Languages | Stock NeMo (WER / RTF) | fastconformer-trt (WER / RTF) | Speed-up |
 |---|---|---|---|---|
 | moondream/parakeet-ultra | 25 | 1.803 / 999x | 1.814 / **4,903x** | **4.91x** |
-| nvidia/parakeet-tdt-0.6b-v3 | 25 | 1.931 / 1,008x | 1.918 / 4,580x | 4.54x |
+| nvidia/parakeet-tdt-0.6b-v3 | 25 | 1.931 / 994x | 1.910 / 4,872x | 4.90x |
 | nvidia/parakeet-tdt-1.1b | English | 1.386 / 684x | 1.392 / 2,991x | 4.37x |
 | nvidia/parakeet-ctc-1.1b | English | 1.844 / 727x | 1.833 / 3,094x | 4.26x |
-| nvidia/parakeet-tdt_ctc-110m | English | 2.433 / 2,374x | 2.465 / **11,222x** | 4.73x |
+| nvidia/parakeet-tdt_ctc-110m | English | 2.433 / 2,397x | 2.453 / **12,109x** | 5.05x |
 
-The v3 and 1.1B rows were measured before the last round of optimisations (frame-budget batching, cached position
-table, fused subsampling), which added about 5% on Ultra. The 110M is a much smaller, English-only model; it is fast
-but about 25% worse on LibriSpeech than the 0.6B models.
+The 1.1B rows were measured before the last round of optimisations (frame-budget batching, cached position table,
+residual folding, fused subsampling), which added about 6% on the 0.6B models. The 110M is a much smaller,
+English-only model; it is fast but about 25% worse on LibriSpeech than the 0.6B models.
+
+### On a datacentre GPU: NVIDIA GH200
+
+The same engine on a rented GH200 (Hopper, 900 W), Ultra, same test sets and runner:
+
+| GH200, parakeet-ultra | test-clean | Earnings-22 (full) | Real-time factor |
+|---|---|---|---|
+| Stock NeMo | 1.801% | 10.03% | 3,873x |
+| **fastconformer-trt, Hopper configuration** | **1.820%** | **10.04%** | **22,776x (5.9x)** |
+
+Hopper wants a different mix from the Spark: TensorRT's own FP8 GEMMs beat our Spark-tuned CUTLASS kernels for the
+large matrix multiplies, while the fused attention and fused subsampling plugins remain essential (without the
+subsampling plugin the GH200 engine runs at 1,216x). See [docs/06-gh200.md](docs/06-gh200.md).
 
 ## Choosing a speed / accuracy point
 
@@ -110,9 +123,9 @@ or not the clock is capped at 2,200 MHz.
 ## Quick start
 
 Requirements: a DGX Spark or another sm_120-family Blackwell GPU, Docker with the NVIDIA container toolkit, and
-access to NGC (`nvcr.io/nvidia/nemo:25.11`). The plugins are compiled for `compute_120f`. Builds for Hopper (GH200,
-H100: `FC_SM=90`) and datacentre Blackwell (B200, GB200: `FC_SM=100`) compile, with the FP8 paths only (the sparse and
-NVFP4 options refuse with an error); they have not yet been measured on hardware.
+access to NGC (`nvcr.io/nvidia/nemo:25.11`). The plugins are compiled for `compute_120f`. Hopper (GH200,
+H100) builds with `FC_SM=90` and has been measured (see above); datacentre Blackwell (B200, GB200) builds with
+`FC_SM=100` but is not yet measured. Both carry the FP8 paths only (the sparse and NVFP4 options refuse with an error).
 
 ```bash
 # 1. image: NeMo 25.11 + scoring packages + CUTLASS 4.8
@@ -161,6 +174,8 @@ directory and image. Engines are specific to the GPU and TensorRT version, so bu
 | `MAXB=128` | Engine profile up to 128 utterances, for `--frame-budget` batching. |
 | `FFN_FP4`, `FFN_FP4_SKIP` | NVFP4 feed-forward (opt-in, costs accuracy; see above). |
 | `FFN_SPARSE`, `QKV_SPARSE` | 2:4 sparse kernels for pruned checkpoints (`LEAN_CKPT=...`). |
+| `FFN_SKIP`, `LEAN_QKV=1` with `LEAN_QKV_PLUGIN=0` | Leave the feed-forward and QKV GEMMs to TensorRT (the Hopper configuration). |
+| `FC_SM=90` / `FC_SM=100` (plugin build) | Hopper / datacentre Blackwell builds of the plugins. |
 
 ## Repository layout
 
@@ -203,7 +218,7 @@ results/                 headline summaries and per-language FLEURS results
 
 - Offline batch transcription. Streaming is not addressed.
 - Utterances up to 60 s per segment (the engine's input profile); longer audio needs segmenting.
-- Measured on the sm_120 family (DGX Spark) only. The Hopper and sm_100 builds compile but are untested.
+- Measured on the DGX Spark (sm_121) and a GH200 (sm_90). The sm_100 (B200) build compiles but is untested.
   The engine build is per machine.
 - The pipeline is not bit-for-bit deterministic run to run (differences at the 0.03 WER level on test-clean).
 

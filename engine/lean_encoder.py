@@ -216,6 +216,18 @@ class LeanEncoder(torch.nn.Module):
             v = att.linear_v(h).view(B, T, H, dk).permute(2, 0, 1, 3)
             q_u = (q + att.pos_bias_u).permute(2, 0, 1, 3)                         # [H, B, T, dk]
             q_v = (q + att.pos_bias_v).permute(2, 0, 1, 3).reshape(H, B * T, dk)
+        if getattr(self, "attn_plugin", False):    # RelPosAttn on q/k/v from TensorRT's GEMM (no QKVHeads plugin)
+            if getattr(self, "pos_cache", None):
+                o = self.pos_L - T
+                ph = self.pos_cache[li][0][:, o:o + 2 * T - 1]
+                c = self.pos_cache[li][1][:, o:o + 2 * T - 1]
+            else:
+                pp = att.linear_pos(pos_emb).view(-1, H, dk).permute(1, 2, 0)
+                c = torch.einsum("hd,hdr->hr", (att.pos_bias_v - att.pos_bias_u).to(pp.dtype), pp).float()
+                ph = pp.permute(0, 2, 1).half()
+            a = _RelPosAttnOp.apply(q_u.half().contiguous(), k.half().contiguous(), v.half().contiguous(), ph.contiguous(),
+                                    c.contiguous(), self._cur_len.to(torch.int32), dk)
+            return att.linear_out(a.to(h.dtype))
         p = att.linear_pos(pos_emb).view(-1, H, dk).permute(1, 2, 0)              # [H, dk, 2T-1]
         bd = torch.matmul(q_v, p).view(H, B, T, 2 * T - 1)
         return self._attn_tail(att, q_u, k, v, bd, key_bias, rel_idx, B, T, D)

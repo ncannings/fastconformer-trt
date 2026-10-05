@@ -66,3 +66,11 @@ The pipeline is not bit-deterministic run to run at the 0.03 WER level:
 - the unfused engine itself scored 2.413 and 2.440 on two runs.
 
 Differences of a few hundredths of a WER point between configurations should therefore be read as noise unless they repeat. See [05-measurement-method.md](05-measurement-method.md).
+
+## Final configuration (5 October)
+
+With the later optimisations (frame-budget batching, cached position table, residual folding into the attention
+output and pw2 GEMMs, including their biases), the 110m was re-measured on the stock machine (driver-default clocks,
+300 s heat soak, wall meter): stock NeMo 2,397x at test-clean 2.433%, 137.7 J per audio hour net; engine **12,109x** at
+2.453%, **39.1 J** per audio hour net: **5.05x**. Encoder 26.7 ms per batch of 32 x 16 s (28.3 ms before). The 110m keeps
+the exactly masked SubConv02 (`LEAN_SUBMASK=1`); the tensor-core conv.3 fusion only exists for the mask-once path.

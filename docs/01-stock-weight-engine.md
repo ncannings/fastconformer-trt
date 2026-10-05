@@ -401,3 +401,11 @@ Energy is whole-machine wall power from a Tapo P304M smart power strip at 1 s, i
 | **Headline: final arm** | 71.5 W | **181** | **113** |
 
 The 90.5 J net figure and the 113 J headline figure come from different sessions with different idle, clock policy and soak; the later controlled pair (414 to 113 J net) is the one to quote. The stock arm of the controlled run also uses more energy than the first bar measurement (414 against 176 J net). The two were not measured under the same conditions: the first bar ran while the GPU clock was still locked at 1,176 MHz, with a much lower idle, and without the 300 s heat soak.
+
+## Final configuration on v3 (5 October)
+
+parakeet-tdt-0.6b-v3 rebuilt with everything that was later adopted on Ultra (frame-budget batching with a 128-utterance
+profile, cached position table, residual folding, fused subsampling conv.0 to conv.3, multilingual calibration) and
+re-measured on the stock machine: stock NeMo 994x at test-clean 1.931%, 401.5 J per audio hour net; engine
+**4,872x** at **1.910%**, **102.9 J** per audio hour net: **4.90x**. Encoder 80.1 ms per batch of 32 x 16 s (87.2 ms in
+the earlier configuration).
