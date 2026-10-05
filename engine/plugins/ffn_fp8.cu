@@ -56,6 +56,16 @@ template <class MainSched> struct EpiFor { using type = cutlass::epilogue::TmaWa
 template <class MainSched> struct MainFor { using type = MainSched; };
 template <class MainSched> struct EpiFor { using type = cutlass::epilogue::collective::EpilogueScheduleAuto; };
 #if defined(FC_SM90)
+// Hopper FP8: the default schedules promote the accumulator to fp32 every few k-blocks (about half the tensor-core
+// rate); cuBLAS (and so TensorRT) uses the fast-accumulation schedules. FC_FP8_PRECISE=1 keeps the promoting ones.
+#if !defined(FC_FP8_PRECISE)
+template <> struct MainFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative> {
+  using type = cutlass::gemm::KernelTmaWarpSpecializedCooperativeFP8FastAccum;
+};
+template <> struct MainFor<cutlass::gemm::KernelTmaWarpSpecializedPingpong> {
+  using type = cutlass::gemm::KernelTmaWarpSpecializedPingpongFP8FastAccum;
+};
+#endif
 template <> struct EpiFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative> {
   using type = cutlass::epilogue::TmaWarpSpecializedCooperative;
 };
