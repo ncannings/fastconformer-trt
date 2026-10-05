@@ -8,7 +8,8 @@ engine with hand-written CUDA/CUTLASS plugins, then runs it in a pipelined batch
 the weights are the published ones, quantised after training. Every optimisation was kept only if it held accuracy,
 in English and across 25 European languages.
 
-Everything here was measured on a single DGX Spark (GB10 Grace Blackwell, sm_121, 128 GB unified memory).
+The headline was measured on a single DGX Spark (GB10 Grace Blackwell, sm_121, 128 GB unified memory); results on
+GH200, H100 and B200 datacentre GPUs follow below.
 
 ## Headline
 
@@ -74,8 +75,8 @@ The same engine on rented datacentre GPUs, Ultra, same test sets and runner (def
 
 On all three, TensorRT's own FP8 GEMMs beat our Spark-tuned CUTLASS kernels for the large matrix multiplies, while the
 fused attention and fused subsampling plugins remain essential (without the subsampling plugin the GH200 runs at
-1,216x). On datacentre GPUs the TDT decoder becomes the main limit. See [docs/06-gh200.md](docs/06-gh200.md) and
-[docs/07-b200.md](docs/07-b200.md) and [docs/08-h100.md](docs/08-h100.md).
+1,216x). On datacentre GPUs the TDT decoder becomes the main limit. See [docs/06-gh200.md](docs/06-gh200.md),
+[docs/08-h100.md](docs/08-h100.md) and [docs/07-b200.md](docs/07-b200.md).
 
 ## Choosing a speed / accuracy point
 
