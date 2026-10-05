@@ -1,0 +1,37 @@
+{
+ "engine": "/data/ultra_fused/engine.plan",
+ "batch": 32,
+ "dec_batch": 256,
+ "pipeline": true,
+ "dec_bf16": true,
+ "cpu_pre": false,
+ "pre_compile": true,
+ "fast_hyps": true,
+ "ckpt": "",
+ "dec_streams": 1,
+ "dec_priority": false,
+ "fast_joint": true,
+ "green": 0,
+ "frame_budget": 19200,
+ "max_batch": 128,
+ "test_clean": 1.8273020422787531,
+ "hyps": {
+  "test_clean": null
+ },
+ "stages_s": {
+  "pre": 0.03350043296813965,
+  "enc": 0.9286468029022217,
+  "dec": 0.3654484748840332
+ },
+ "audio_s": 19452.480625,
+ "walls_s": [
+  1.237903118133545,
+  1.2102985382080078,
+  1.176558256149292
+ ],
+ "rtf": 16072.464776997691,
+ "timed_window": [
+  1791194396.1715615,
+  1791194401.1324959
+ ]
+}

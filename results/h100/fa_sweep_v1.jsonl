@@ -1,0 +1,14 @@
+{"what": "ffn", "FFN_V1": "0", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1826, "tflops": 587.9}
+{"what": "ffn", "FFN_V1": "1", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1935, "tflops": 554.9}
+{"what": "ffn", "FFN_V1": "2", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1911, "tflops": 562.0}
+{"what": "ffn", "FFN_V1": "3", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.178, "tflops": 603.2}
+{"what": "ffn", "FFN_V1": "4", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1904, "tflops": 563.9}
+{"what": "ffn", "FFN_V1": "5", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1945, "tflops": 552.2}
+{"what": "ffn", "FFN_V1": "6", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1943, "tflops": 552.8}
+{"what": "ffn", "FFN_V1": "7", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1951, "tflops": 550.2}
+{"what": "ffn", "FFN_V1": "8", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1751, "tflops": 613.1}
+{"what": "ffn", "FFN_V1": "9", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1789, "tflops": 600.1}
+{"what": "ffn", "FFN_V1": "10", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1836, "tflops": 584.8}
+{"what": "ffn", "FFN_V1": "11", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1924, "tflops": 558.2}
+{"what": "ffn", "FFN_V1": "12", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.183, "tflops": 586.6}
+{"what": "ffn", "FFN_V1": "13", "FFN_VR": null, "SPL_VR": null, "QKV_V": null, "rc": 0, "rel_err": 0.0022750739008188248, "ms": 0.1761, "tflops": 609.8}

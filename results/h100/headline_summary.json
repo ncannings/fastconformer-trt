@@ -1,0 +1,25 @@
+{
+ "gpu_idle_w": 76.1,
+ "energy_note": "GPU power from nvidia-smi only (no wall meter)",
+ "stock": {
+  "rtf": 4693,
+  "test_clean": 1.795,
+  "earnings22_full": 10.055,
+  "gpu_w_mean": 390.3,
+  "gpu_J_per_audio_h": 299.4,
+  "gpu_J_per_audio_h_net": 241.0,
+  "sm_mhz_mean": 1980,
+  "temp_max_c": 54.0
+ },
+ "engine": {
+  "rtf": 20667,
+  "test_clean": 1.841,
+  "earnings22_full": 10.088,
+  "gpu_w_mean": 555.7,
+  "gpu_J_per_audio_h": 118.9,
+  "gpu_J_per_audio_h_net": 102.6,
+  "sm_mhz_mean": 1955,
+  "temp_max_c": 57.0
+ },
+ "speedup": 4.4
+}

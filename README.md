@@ -62,19 +62,20 @@ The 1.1B rows were measured before the last round of optimisations (frame-budget
 residual folding, fused subsampling), which added about 6% on the 0.6B models. The 110M is a much smaller,
 English-only model; it is fast but about 25% worse on LibriSpeech than the 0.6B models.
 
-### On datacentre GPUs: GH200 and B200
+### On datacentre GPUs: GH200, H100 and B200
 
 The same engine on rented datacentre GPUs, Ultra, same test sets and runner (default clocks, throughput figures):
 
 | parakeet-ultra | Stock NeMo (test-clean / Earnings-22 / RTF) | fastconformer-trt (test-clean / Earnings-22 / RTF) | Speed-up |
 |---|---|---|---|
 | NVIDIA GH200 (Hopper) | 1.801 / 10.03 / 3,873x | 1.820 / 10.04 / **22,776x** | 5.9x |
+| NVIDIA H100 SXM (Hopper) | 1.795 / 10.06 / 4,693x | 1.841 / 10.09 / **20,667x** | 4.4x |
 | NVIDIA B200 (Blackwell) | 1.808 / 10.05 / 5,743x | 1.816 / 10.05 / **25,073x** | 4.4x |
 
-On both, TensorRT's own FP8 GEMMs beat our Spark-tuned CUTLASS kernels for the large matrix multiplies, while the
+On all three, TensorRT's own FP8 GEMMs beat our Spark-tuned CUTLASS kernels for the large matrix multiplies, while the
 fused attention and fused subsampling plugins remain essential (without the subsampling plugin the GH200 runs at
 1,216x). On datacentre GPUs the TDT decoder becomes the main limit. See [docs/06-gh200.md](docs/06-gh200.md) and
-[docs/07-b200.md](docs/07-b200.md).
+[docs/07-b200.md](docs/07-b200.md) and [docs/08-h100.md](docs/08-h100.md).
 
 ## Choosing a speed / accuracy point
 
@@ -220,7 +221,7 @@ results/                 headline summaries and per-language FLEURS results
 
 - Offline batch transcription. Streaming is not addressed.
 - Utterances up to 60 s per segment (the engine's input profile); longer audio needs segmenting.
-- Measured on the DGX Spark (sm_121), a GH200 (sm_90) and a B200 (sm_100).
+- Measured on the DGX Spark (sm_121), a GH200 and an H100 (sm_90) and a B200 (sm_100).
   The engine build is per machine.
 - The pipeline is not bit-for-bit deterministic run to run (differences at the 0.03 WER level on test-clean).
 

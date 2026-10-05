@@ -1,0 +1,10 @@
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "0", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.078, "tflops": 516.5}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "1", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.0706, "tflops": 570.7}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "2", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.068, "tflops": 592.4}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "3", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.0858, "tflops": 469.0}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "4", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.0824, "tflops": 488.8}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "5", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.0778, "tflops": 517.2}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "6", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.073, "tflops": 551.3}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "7", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.0791, "tflops": 509.0}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "8", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.0644, "tflops": 625.3}
+{"what": "qkv", "FFN_V1": null, "FFN_VR": null, "SPL_VR": null, "QKV_V": "9", "rc": 0, "rel_err": 0.0005770337884314358, "ms": 0.0821, "tflops": 490.6}
