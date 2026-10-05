@@ -14,7 +14,8 @@ GH200, H100 and B200 datacentre GPUs follow below.
 ## Headline
 
 [parakeet-ultra](https://huggingface.co/moondream/parakeet-ultra) (Moondream's post-trained parakeet-tdt-0.6b-v3:
-same architecture and tokenizer, 25 languages), LibriSpeech test-clean (2,620 utterances, 5.4 hours). Timed from
+same architecture and tokenizer, 25 languages; converted for NeMo at
+[ncannings/parakeet-ultra-nemo](https://huggingface.co/ncannings/parakeet-ultra-nemo)), LibriSpeech test-clean (2,620 utterances, 5.4 hours). Timed from
 16 kHz audio already in GPU memory to text out: mel features, encoder, decoder and text (see measurement notes). Stock machine: GPU clocks at driver default, 300 s heat soak, both arms in the same
 session, wall-plug energy.
 
@@ -144,6 +145,7 @@ docker run --rm -v $PWD:/w -w /w/plugins fastconformer-trt:25.11 bash build.sh
 
 # 4. parakeet-ultra into NeMo format (or use any NeMo hub model name directly as ASR_MODEL)
 ./run_in_container.sh ultra_to_nemo.py moondream/parakeet-ultra /data/ultra.nemo
+#    or download the converted checkpoint: huggingface.co/ncannings/parakeet-ultra-nemo (file ultra.nemo)
 
 # 5. engine (the default configuration)
 ASR_MODEL=/data/ultra.nemo MAXB=128 FFN_RESIDUAL=1 LEAN_PREMASK_ONCE=1 LEAN_DWSHIFT=1 LEAN_RELSHIFT=1 \
