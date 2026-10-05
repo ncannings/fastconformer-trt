@@ -58,7 +58,8 @@ using ArchQ = cutlass::arch::Sm120;
 using BiasStride = Stride<_0, _1, int64_t>;     // per column, one vector per batch (head)
 
 // One N tile per head: TileN = dk (128 for the 0.6B/1.1B models, 64 for d_model 512 / 8 heads).
-template <int TileN, int TileM = 128, int TileK = 128, class Sched = cutlass::gemm::KernelTmaWarpSpecializedPingpong>
+template <int TileN, int TileM = 128, int TileK = 128, class Sched = cutlass::gemm::KernelTmaWarpSpecializedPingpong,
+          class ClusterT = Cluster>
 struct G {
   using Tile = Shape<Int<TileM>, Int<TileN>, Int<TileK>>;
   // D = alpha * acc + bias[n, l]
@@ -66,12 +67,12 @@ struct G {
                            fus::Sm90ScalarBroadcast<float>, fus::Sm90AccFetch,
                            fus::Sm90RowBroadcast<0, Tile, float, float, BiasStride>>;
   using CollEpi = typename cutlass::epilogue::collective::CollectiveBuilder<
-      ArchQ, cutlass::arch::OpClassTensorOp, Tile, Cluster,
+      ArchQ, cutlass::arch::OpClassTensorOp, Tile, ClusterT,
       cutlass::epilogue::collective::EpilogueTileAuto, float, float, void, cutlass::layout::RowMajor, 8, Half,
       cutlass::layout::RowMajor, 8, typename EpiFor<Sched>::type, Epi>::CollectiveOp;
   using CollMain = typename cutlass::gemm::collective::CollectiveBuilder<
       ArchQ, cutlass::arch::OpClassTensorOp, E4M3, cutlass::layout::RowMajor, 16, E4M3,
-      cutlass::layout::ColumnMajor, 16, float, Tile, Cluster,
+      cutlass::layout::ColumnMajor, 16, float, Tile, ClusterT,
       cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename CollEpi::SharedStorage))>,
       typename MainFor<Sched>::type>::CollectiveOp;
   using Kernel = cutlass::gemm::kernel::GemmUniversal<Shape<int, int, int, int>, CollMain, CollEpi, void>;
@@ -129,6 +130,12 @@ int qkv_heads_run(const void* x8, const void* w8, const float* bias, void* out_q
     case 3: return run<G<128, 128, 64, Ping>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
     case 4: return run<G<128, 128, 64, Coop>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
     case 5: return run<G<128, 64, 128, Ping>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
+#if defined(FC_SM90)                                  // Hopper: 2-CTA clusters (TMA multicast of X across heads' tiles)
+    case 6: return run<G<128, 128, 128, Coop, Shape<_2, _1, _1>>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
+    case 7: return run<G<128, 128, 128, Ping, Shape<_2, _1, _1>>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
+    case 8: return run<G<128, 256, 128, Coop, Shape<_2, _1, _1>>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
+    case 9: return run<G<128, 128, 64, Coop, Shape<_2, _1, _1>>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
+#endif
     default: return run<G<128, 128, 128, Ping>>(x8, w8, bias, outs, M, K, H, dk, alpha3, s);
   }
 }

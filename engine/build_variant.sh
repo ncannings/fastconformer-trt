@@ -2,7 +2,7 @@
 # Export a lean-encoder variant (LEAN_* env), swap in the FFN and subsampling plugins, build the TensorRT engine and
 # profile one 32 x 16 s batch. usage: LEAN_...=1 build_variant.sh OUT_DIR   (OUT_DIR under ~/asr_data, e.g. lean11)
 set -e
-R=${RUNNER:-./run_in_container.sh}        # RUNNER=./run_nolock.sh while a training run holds the GPU lock
+R=${RUNNER:-./run_in_container.sh}; [ "${NATIVE:-0}" = 1 ] && R=./run_native.sh   # NATIVE=1: inside the NeMo container itself        # RUNNER=./run_nolock.sh while a training run holds the GPU lock
 LK="flock /tmp/fastconformer-trt.lock"; [ -n "$NOLOCK" ] && LK=""
 D=$1; cd $(dirname $0)
 TAG=$(python3 -c "import os;print(('_pm1' if os.environ.get('LEAN_PREMASK_ONCE')=='1' else '')+('_h' if os.environ.get('LEAN_HALF')=='1' else '')+('_dws' if os.environ.get('LEAN_DWSHIFT')=='1' else '')+('_rs' if os.environ.get('LEAN_RELSHIFT')=='1' else '')+('_hb' if os.environ.get('LEAN_HB')=='1' else '')+('_qkv' if os.environ.get('LEAN_QKV')=='1' or os.environ.get('LEAN_QKV_PLUGIN')=='1' else '')+('p' if os.environ.get('LEAN_QKV_PLUGIN')=='1' else '')+('_attn' if os.environ.get('LEAN_ATTN_PLUGIN')=='1' else ''))")
@@ -26,6 +26,7 @@ t = tarfile.open(hf_hub_download(r, f)); c = [n for n in t.getnames() if n.endsw
 print('NFEAT', yaml.safe_load(t.extractfile(c))['preprocessor']['features'])" 2>/dev/null | grep NFEAT | cut -d' ' -f2); fi
 echo "features: $NF"
 TE="docker run --rm --gpus all --ipc=host -v ${ASR_DATA_DIR:-$HOME/asr_data}:/data -v $PWD/plugins:/plug ${ASR_IMAGE:-fastconformer-trt:25.11} /usr/src/tensorrt/bin/trtexec"
+[ "${NATIVE:-0}" = 1 ] && TE=/usr/src/tensorrt/bin/trtexec
 PREC="--fp16 --fp8"; [ "$LEAN_HALF" = 1 ] && PREC="--stronglyTyped"     # fp16 export: types fixed by the graph
 $LK $TE --onnx=/data/$D/$S.onnx --staticPlugins=/plug/libffn_fp8.so --saveEngine=/data/$D/engine.plan $PREC --minShapes=audio_signal:1x${NF}x100,length:1 --optShapes=audio_signal:32x${NF}x1600,length:32 --maxShapes=audio_signal:${MAXB:-32}x${NF}x6000,length:${MAXB:-32} --memPoolSize=workspace:16384 --skipInference 2>&1 | grep -E "Engine built|\[E\]" | head -3
 $LK $TE --loadEngine=/data/$D/engine.plan --staticPlugins=/plug/libffn_fp8.so --shapes=audio_signal:32x${NF}x1600,length:32 --iterations=30 --warmUp=1000 --dumpProfile --separateProfileRun --exportProfile=/data/$D/prof.json 2>&1 | grep -E "GPU Compute Time:" | cut -c1-120

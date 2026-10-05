@@ -12,6 +12,7 @@
 // Exposes ffn_fp8_run() for a ctypes test and the TensorRT plugin "FFNFp8" (ffn_plugin.cpp).
 
 #include <cuda_runtime.h>
+#include <cstdlib>
 
 #include "cutlass/cutlass.h"
 #include "cute/tensor.hpp"
@@ -76,18 +77,19 @@ using Epi2 = fus::LinearCombination<cutlass::half_t, Acc, void, Acc>;
 
 // GEMM2 with the half-step residual add folded in: D = res_scale * alpha * acc + residual (C = residual, same type as
 // D: TensorRT keeps the residual stream in fp32, so both fp32 and fp16 variants)
-template <class E>
+template <class E, class TileT = Shape<_128, _128, _64>, class SchedT = cutlass::gemm::KernelTmaWarpSpecializedCooperative,
+          class ClusterT = Cluster>
 struct GemmRes {
-  using Tile = Shape<_128, _128, _64>;
+  using Tile = TileT;
   static constexpr int AlignE = 128 / cutlass::sizeof_bits<E>::value;
   using Fusion = fus::LinearCombination<E, Acc, E, Acc>;
   using CollEpi = typename cutlass::epilogue::collective::CollectiveBuilder<
-      Arch, OpClass, Tile, Cluster, cutlass::epilogue::collective::EpilogueTileAuto, Acc, Acc,
-      E, LayoutD, AlignE, E, LayoutD, AlignE, typename EpiFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative>::type, Fusion>::CollectiveOp;
+      Arch, OpClass, Tile, ClusterT, cutlass::epilogue::collective::EpilogueTileAuto, Acc, Acc,
+      E, LayoutD, AlignE, E, LayoutD, AlignE, typename EpiFor<SchedT>::type, Fusion>::CollectiveOp;
   using CollMain = typename cutlass::gemm::collective::CollectiveBuilder<
-      Arch, OpClass, E4M3, LayoutA, kAlign8, E4M3, LayoutB, kAlign8, Acc, Tile, Cluster,
+      Arch, OpClass, E4M3, LayoutA, kAlign8, E4M3, LayoutB, kAlign8, Acc, Tile, ClusterT,
       cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename CollEpi::SharedStorage))>,
-      typename MainFor<cutlass::gemm::KernelTmaWarpSpecializedCooperative>::type>::CollectiveOp;
+      typename MainFor<SchedT>::type>::CollectiveOp;
   using Kernel = cutlass::gemm::kernel::GemmUniversal<Shape<int, int, int, int>, CollMain, CollEpi, void>;
   using Gemm = cutlass::gemm::device::GemmUniversalAdapter<Kernel>;
 };
@@ -145,14 +147,14 @@ struct GemmGlu {
   using Gemm = cutlass::gemm::device::GemmUniversalAdapter<Kernel>;
 };
 
-template <class Tile, class Sched, class ElementD, int AlignD, class Fusion>
+template <class Tile, class Sched, class ElementD, int AlignD, class Fusion, class ClusterT = Cluster>
 struct GemmT {
   using CollEpi = typename cutlass::epilogue::collective::CollectiveBuilder<
-      Arch, OpClass, Tile, Cluster, cutlass::epilogue::collective::EpilogueTileAuto, Acc, Acc,
+      Arch, OpClass, Tile, ClusterT, cutlass::epilogue::collective::EpilogueTileAuto, Acc, Acc,
       void, LayoutD, AlignD, ElementD, LayoutD, AlignD,
       typename EpiFor<Sched>::type, Fusion>::CollectiveOp;
   using CollMain = typename cutlass::gemm::collective::CollectiveBuilder<
-      Arch, OpClass, E4M3, LayoutA, kAlign8, E4M3, LayoutB, kAlign8, Acc, Tile, Cluster,
+      Arch, OpClass, E4M3, LayoutA, kAlign8, E4M3, LayoutB, kAlign8, Acc, Tile, ClusterT,
       cutlass::gemm::collective::StageCountAutoCarveout<static_cast<int>(sizeof(typename CollEpi::SharedStorage))>,
       typename MainFor<Sched>::type>::CollectiveOp;
   using Kernel = cutlass::gemm::kernel::GemmUniversal<Shape<int, int, int, int>, CollMain, CollEpi, void>;
@@ -162,15 +164,32 @@ struct GemmT {
 using Coop = cutlass::gemm::KernelTmaWarpSpecializedCooperative;
 using Ping = cutlass::gemm::KernelTmaWarpSpecializedPingpong;
 // Variants (tile, schedule); FFN_V1 / FFN_V2 pick the production pair.
-#define FFN_VARIANTS(X) \
-  X(0, Shape<_128 COMMA _128 COMMA _128>, Coop) \
-  X(1, Shape<_128 COMMA _128 COMMA _128>, Ping) \
-  X(2, Shape<_64 COMMA _128 COMMA _128>, Ping) \
-  X(3, Shape<_128 COMMA _256 COMMA _64>, Coop) \
-  X(4, Shape<_128 COMMA _128 COMMA _64>, Coop) \
-  X(5, Shape<_128 COMMA _128 COMMA _64>, Ping) \
-  X(6, Shape<_64 COMMA _256 COMMA _128>, Ping) \
-  X(7, Shape<_128 COMMA _64 COMMA _128>, Ping)
+using Cl11 = Shape<_1, _1, _1>;
+using Cl21 = Shape<_2, _1, _1>;
+using Cl12 = Shape<_1, _2, _1>;
+// Variants (tile, schedule, cluster). 0-7 are the sm_120 set (single-CTA clusters only on GB10); 8-13 add the Hopper
+// shapes (bigger tiles, 2-CTA clusters for TMA multicast). Chosen at run time: FFN_V1 (GEMM1), FFN_V2 (plain GEMM2),
+// FFN_VR (GEMM2 with the residual folded in, -1 = the fixed 128x128x64 cooperative kernel), SPL_VR (dense linears).
+#define FFN_VARIANTS_BASE(X) \
+  X(0, Shape<_128 COMMA _128 COMMA _128>, Coop, Cl11) \
+  X(1, Shape<_128 COMMA _128 COMMA _128>, Ping, Cl11) \
+  X(2, Shape<_64 COMMA _128 COMMA _128>, Ping, Cl11) \
+  X(3, Shape<_128 COMMA _256 COMMA _64>, Coop, Cl11) \
+  X(4, Shape<_128 COMMA _128 COMMA _64>, Coop, Cl11) \
+  X(5, Shape<_128 COMMA _128 COMMA _64>, Ping, Cl11) \
+  X(6, Shape<_64 COMMA _256 COMMA _128>, Ping, Cl11) \
+  X(7, Shape<_128 COMMA _64 COMMA _128>, Ping, Cl11)
+#if defined(FC_SM90)
+#define FFN_VARIANTS(X) FFN_VARIANTS_BASE(X) \
+  X(8, Shape<_128 COMMA _256 COMMA _128>, Coop, Cl21) \
+  X(9, Shape<_128 COMMA _256 COMMA _64>, Coop, Cl21) \
+  X(10, Shape<_128 COMMA _128 COMMA _128>, Coop, Cl21) \
+  X(11, Shape<_128 COMMA _128 COMMA _128>, Ping, Cl21) \
+  X(12, Shape<_256 COMMA _128 COMMA _64>, Coop, Cl12) \
+  X(13, Shape<_128 COMMA _256 COMMA _128>, Coop, Cl12)
+#else
+#define FFN_VARIANTS(X) FFN_VARIANTS_BASE(X)
+#endif
 #define COMMA ,
 
 template <class Gemm>
@@ -225,12 +244,42 @@ int run_g2(const void* h8, void* y, const void* w2, int M, int N1, int N2, float
   return run<Gemm>(a, ws, wsz, s);
 }
 
+static int env_int(const char* name, int def) {   // run-time variant choice (sweeps without rebuilding)
+  const char* v = getenv(name);
+  return v && *v ? atoi(v) : def;
+}
+
+// y = residual + res_scale * alpha * a @ b^T with GEMM variant v (-1: GemmRes default tile)
+template <class E>
+int run_res_v(int v, const void* a8, const void* b8, const void* res, void* y, int M, int N, int K, float alpha_eff,
+              cudaStream_t s) {
+  auto go = [&](auto g) {
+    using Gemm = typename decltype(g)::Gemm;
+    auto a = make_args<Gemm>(a8, b8, y, M, N, K);
+    a.epilogue.ptr_C = static_cast<E const*>(res);
+    a.epilogue.thread.alpha = alpha_eff;
+    a.epilogue.thread.beta = 1.f;
+    return run<Gemm>(a, nullptr, 0, s);
+  };
+#if defined(FC_SM90)                         // variants only on Hopper; GB10's shared memory fits the default only
+  switch (v) {
+#define X(i, T, S, C) case i: return go(GemmRes<E, T, S, C>{});
+    FFN_VARIANTS(X)
+#undef X
+    default: return go(GemmRes<E>{});
+  }
+#else
+  (void)v;
+  return go(GemmRes<E>{});
+#endif
+}
+
 extern "C" {
 
 int ffn_gemm1(int v, const void* x8, void* h8, const void* w1, int M, int K1, int N1, float alpha1, float oscale,
               void* ws, size_t wsz, cudaStream_t s) {
   switch (v) {
-#define X(i, T, S) case i: return run_g1<GemmT<T, S, E4M3, kAlign8, Epi1>>(x8, h8, w1, M, K1, N1, alpha1, oscale, ws, wsz, s);
+#define X(i, T, S, C) case i: return run_g1<GemmT<T, S, E4M3, kAlign8, Epi1, C>>(x8, h8, w1, M, K1, N1, alpha1, oscale, ws, wsz, s);
     FFN_VARIANTS(X)
 #undef X
   }
@@ -240,7 +289,7 @@ int ffn_gemm1(int v, const void* x8, void* h8, const void* w1, int M, int K1, in
 int ffn_gemm2(int v, const void* h8, void* y, const void* w2, int M, int N1, int N2, float alpha2, void* ws,
               size_t wsz, cudaStream_t s) {
   switch (v) {
-#define X(i, T, S) case i: return run_g2<GemmT<T, S, cutlass::half_t, kAlign16, Epi2>>(h8, y, w2, M, N1, N2, alpha2, ws, wsz, s);
+#define X(i, T, S, C) case i: return run_g2<GemmT<T, S, cutlass::half_t, kAlign16, Epi2, C>>(h8, y, w2, M, N1, N2, alpha2, ws, wsz, s);
     FFN_VARIANTS(X)
 #undef X
   }
@@ -260,9 +309,10 @@ int ffn_gemm2(int v, const void* h8, void* y, const void* w2, int M, int N1, int
 // these (non split-K) kernels; ws may be null.
 int ffn_fp8_run(const void* x8, void* h8, void* y, const void* w1, const void* w2, int M, int K1, int N1, int N2,
                 float alpha1, float oscale, float alpha2, void* ws, size_t ws_bytes, cudaStream_t s) {
-  int r = ffn_gemm1(FFN_V1, x8, h8, w1, M, K1, N1, alpha1, oscale, ws, ws_bytes, s);
+  static const int v1 = env_int("FFN_V1", FFN_V1), v2 = env_int("FFN_V2", FFN_V2);
+  int r = ffn_gemm1(v1, x8, h8, w1, M, K1, N1, alpha1, oscale, ws, ws_bytes, s);
   if (r) return 10 + r;
-  r = ffn_gemm2(FFN_V2, h8, y, w2, M, N1, N2, alpha2, ws, ws_bytes, s);
+  r = ffn_gemm2(v2, h8, y, w2, M, N1, N2, alpha2, ws, ws_bytes, s);
   if (r) return 20 + r;
   return 0;
 }
@@ -273,18 +323,11 @@ size_t ffn_fp8_cutlass_ws(int M, int K1, int N1, int N2) { return 0; }
 int ffn_fp8_run_res(const void* x8, void* h8, const void* res, void* y, const void* w1, const void* w2, int M, int K1,
                     int N1, int N2, float alpha1, float oscale, float alpha2, float res_scale, int is_f32,
                     cudaStream_t s) {
-  int r = ffn_gemm1(FFN_V1, x8, h8, w1, M, K1, N1, alpha1, oscale, nullptr, 0, s);
+  static const int v1 = env_int("FFN_V1", FFN_V1), vr = env_int("FFN_VR", -1);
+  int r = ffn_gemm1(v1, x8, h8, w1, M, K1, N1, alpha1, oscale, nullptr, 0, s);
   if (r) return 10 + r;
-  auto go = [&](auto tag) {
-    using E = decltype(tag);
-    using Gemm = typename GemmRes<E>::Gemm;
-    auto a = make_args<Gemm>(h8, w2, y, M, N2, N1);
-    a.epilogue.ptr_C = static_cast<E const*>(res);
-    a.epilogue.thread.alpha = res_scale * alpha2;
-    a.epilogue.thread.beta = 1.f;
-    return run<Gemm>(a, nullptr, 0, s);
-  };
-  r = is_f32 ? go(float{}) : go(cutlass::half_t{});
+  r = is_f32 ? run_res_v<float>(vr, h8, w2, res, y, M, N2, N1, res_scale * alpha2, s)
+             : run_res_v<cutlass::half_t>(vr, h8, w2, res, y, M, N2, N1, res_scale * alpha2, s);
   return r ? 20 + r : 0;
 }
 
@@ -292,16 +335,9 @@ int ffn_fp8_run_res(const void* x8, void* h8, const void* res, void* y, const vo
 // y = residual + res_scale * alpha * x8 @ W^T in the residual's type (is_f32). W e4m3 [N, K] row-major.
 int fp8_linear_res_run(const void* x8, const void* w, const void* res, void* y, int M, int N, int K, float alpha,
                        float res_scale, int is_f32, cudaStream_t s) {
-  auto go = [&](auto tag) {
-    using E = decltype(tag);
-    using Gemm = typename GemmRes<E>::Gemm;
-    auto a = make_args<Gemm>(x8, w, y, M, N, K);
-    a.epilogue.ptr_C = static_cast<E const*>(res);
-    a.epilogue.thread.alpha = res_scale * alpha;
-    a.epilogue.thread.beta = 1.f;
-    return run<Gemm>(a, nullptr, 0, s);
-  };
-  return is_f32 ? go(float{}) : go(cutlass::half_t{});
+  static const int vr = env_int("SPL_VR", -1);
+  return is_f32 ? run_res_v<float>(vr, x8, w, res, y, M, N, K, res_scale * alpha, s)
+                : run_res_v<cutlass::half_t>(vr, x8, w, res, y, M, N, K, res_scale * alpha, s);
 }
 
 // As fp8_linear_res_run with a bias: y = residual + res_scale * (alpha * x8 @ W^T + b); bs = b * res_scale on the
