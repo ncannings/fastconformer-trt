@@ -3,6 +3,14 @@
 **Multilingual speech recognition at 4,903x real time on one NVIDIA DGX Spark: 4.9x faster than stock NeMo, at the
 same accuracy, on a quarter of the energy.**
 
+![Live terminal recording on the DGX Spark: stock NeMo against fastconformer-trt on LibriSpeech test-clean](docs/media/demo.gif)
+
+Recorded live on the DGX Spark (6 October 2026): stock NVIDIA NeMo transcribes LibriSpeech test-clean (5.4 hours,
+2,620 clips) in 20.13 s (966x real time), fastconformer-trt in 4.00 s (4,864x), word error rate 1.80% against 1.81%.
+Every transcript scrolls past as it is produced. The timed passes play at real speed; only model loading and the
+untimed accuracy scoring are shortened in the recording. [MP4](docs/media/demo.mp4) · raw terminal recording
+[demo.cast](docs/media/demo.cast) (replay with `asciinema play docs/media/demo.cast`).
+
 fastconformer-trt turns an NVIDIA NeMo FastConformer checkpoint (Parakeet TDT and CTC models) into an FP8 TensorRT
 engine with hand-written CUDA/CUTLASS plugins, then runs it in a pipelined batch transcriber. Nothing is retrained:
 the weights are the published ones, quantised after training. Every optimisation was kept only if it held accuracy,
