@@ -1,0 +1,14 @@
+{
+ "r": 13,
+ "n": 8000,
+ "encoder": "/w/trt/trt_step.py:build",
+ "decoder": "fused",
+ "base_allocated_gb": 2.594089984,
+ "startup_warmup_peak_allocated_gb": 51.104912896,
+ "startup_warmup_peak_reserved_gb": 62.486740992,
+ "serving_peak_allocated_gb": 50.609168896,
+ "serving_peak_reserved_gb": 62.486740992,
+ "end_reserved_minus_allocated_gb": 18.023491584,
+ "n_finished": 8000,
+ "transcripts_sha256": "5550bab50ecb5828"
+}

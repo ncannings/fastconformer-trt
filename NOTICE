@@ -13,6 +13,13 @@ Models evaluated (all CC-BY-4.0; weights are downloaded from their owners, not i
 - nvidia/parakeet-tdt-0.6b-v3, nvidia/parakeet-tdt-1.1b, nvidia/parakeet-ctc-1.1b, nvidia/parakeet-tdt_ctc-110m (NVIDIA)
 - moondream/parakeet-ultra (Moondream), a post-trained parakeet-tdt-0.6b-v3; converted to NeMo by ultra_to_nemo.py
 
+Live streaming (live/, docs/09-live-streaming.md):
+- nvidia/nemotron-3.5-asr-streaming-0.6b (NVIDIA, OpenMDW-1.1), downloaded from NVIDIA; no weights, ONNX graphs or
+  TensorRT engines are included here.
+- The live harness calls NVIDIA NeMo (Apache-2.0) modules unchanged; live/fused_decoder.py reimplements NeMo's greedy
+  label-looping RNN-T decoding semantics; live/trt/ exports NeMo's cache-aware encoder step and quantises it with
+  TensorRT Model Optimizer.
+
 Evaluation data (downloaded by engine/fetch_data.sh, not included here):
 - LibriSpeech (CC-BY-4.0), openslr/librispeech_asr
 - Earnings-22 (CC-BY-SA-4.0), distil-whisper/earnings22

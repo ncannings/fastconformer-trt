@@ -1,0 +1,184 @@
+{
+ "spark_our_arm_peak_memory": {
+  "what": "live/mem_probe.py on the DGX Spark: one server run at N slots (FP8 r=13 engine + fused decoder, TRT_MAX_CALL_B=512); process peaks of allocated and reserved CUDA memory over start-up, warm-up and serving. Same transcripts (sha256) before and after each fix at N = 2,048. Source files on the measuring machine: memcmp_old6_2048.json, memcmp_new_2048.json, memslab2_{2048,4096,6144}.json.",
+  "n2048_6oct_code": {
+   "startup_warmup_peak_reserved_gb": 53.684994048,
+   "serving_peak_reserved_gb": 53.684994048,
+   "transcripts_sha256": "91716e61e7137bcd",
+   "n_finished": 2048
+  },
+  "n2048_warmup_fix": {
+   "startup_warmup_peak_reserved_gb": 37.20347648,
+   "serving_peak_reserved_gb": 37.205573632,
+   "transcripts_sha256": "91716e61e7137bcd",
+   "n_finished": 2048
+  },
+  "n2048_warmup_fix_plus_slab_step": {
+   "startup_warmup_peak_reserved_gb": 24.196939776,
+   "serving_peak_reserved_gb": 24.196939776,
+   "transcripts_sha256": "91716e61e7137bcd",
+   "n_finished": 2048
+  },
+  "n4096_slab_step": {
+   "startup_warmup_peak_reserved_gb": 31.555846144,
+   "serving_peak_reserved_gb": 32.60022784,
+   "n_finished": 4096
+  },
+  "n6144_slab_step": {
+   "startup_warmup_peak_reserved_gb": 40.498102272,
+   "serving_peak_reserved_gb": 43.63124736,
+   "n_finished": 6144
+  }
+ },
+ "stock_piece_step_check": {
+  "what": "live/check_stock_slab.py on the Spark, r=13, 640 slots: NeMo's own encoder step on pieces of the float32 cache slab against one full-batch call. Bit-identical whenever the call has at most as many rows as one piece; above that, NeMo's own output depends on the batch size (cuDNN in the subsampling convolution), so pieces are not bit-identical to one full-batch call. Peak memory per step in GB (two steps).",
+  "rows": [
+   {
+    "B": 300,
+    "mode": "piece1024",
+    "bit_identical": true,
+    "peak_step_gb_full": [
+     5.91,
+     5.88
+    ],
+    "peak_step_gb_piece": [
+     5.88,
+     3.99
+    ]
+   },
+   {
+    "B": 300,
+    "mode": "piece512",
+    "bit_identical": true,
+    "peak_step_gb_full": [
+     5.91,
+     5.88
+    ],
+    "peak_step_gb_piece": [
+     3.99,
+     3.99
+    ]
+   },
+   {
+    "B": 300,
+    "mode": "piece256",
+    "bit_identical": false,
+    "peak_step_gb_full": [
+     5.91,
+     5.88
+    ],
+    "peak_step_gb_piece": [
+     3.4,
+     3.4
+    ]
+   },
+   {
+    "B": 640,
+    "mode": "piece1024",
+    "bit_identical": true,
+    "peak_step_gb_full": [
+     12.53,
+     12.53
+    ],
+    "peak_step_gb_piece": [
+     10.65,
+     8.51
+    ]
+   },
+   {
+    "B": 640,
+    "mode": "piece512",
+    "bit_identical": false,
+    "peak_step_gb_full": [
+     12.53,
+     12.53
+    ],
+    "peak_step_gb_piece": [
+     6.81,
+     6.81
+    ]
+   },
+   {
+    "B": 640,
+    "mode": "piece256",
+    "bit_identical": false,
+    "peak_step_gb_full": [
+     12.53,
+     12.53
+    ],
+    "peak_step_gb_piece": [
+     3.42,
+     3.42
+    ]
+   }
+  ]
+ },
+ "h100_memory_smoke": {
+  "what": "live/mem_probe.py on the H100 (7 Oct), r=13, 20 s of serving, all streams starting within 5 s: our arms at 8,000 and 12,000 slots, stock (with the piece step) at 2,400.",
+  "fp16_8000": {
+   "r": 13,
+   "n": 8000,
+   "decoder": "fused",
+   "base_allocated_gb": 2.594089984,
+   "startup_warmup_peak_allocated_gb": 51.104912896,
+   "startup_warmup_peak_reserved_gb": 62.486740992,
+   "serving_peak_allocated_gb": 50.609168896,
+   "serving_peak_reserved_gb": 62.486740992,
+   "end_reserved_minus_allocated_gb": 18.023491584,
+   "n_finished": 8000,
+   "transcripts_sha256": "5550bab50ecb5828"
+  },
+  "fp16_12000": {
+   "r": 13,
+   "n": 12000,
+   "decoder": "fused",
+   "base_allocated_gb": 2.594089984,
+   "startup_warmup_peak_allocated_gb": 67.866968576,
+   "startup_warmup_peak_reserved_gb": 79.352037376,
+   "serving_peak_allocated_gb": 67.123352064,
+   "serving_peak_reserved_gb": 72.850866176,
+   "end_reserved_minus_allocated_gb": 14.944559616,
+   "n_finished": 12000,
+   "transcripts_sha256": "4c5d6956033c6e26"
+  },
+  "fp8_8000": {
+   "r": 13,
+   "n": 8000,
+   "decoder": "fused",
+   "base_allocated_gb": 2.594089984,
+   "startup_warmup_peak_allocated_gb": 51.48659456,
+   "startup_warmup_peak_reserved_gb": 62.868422656,
+   "serving_peak_allocated_gb": 50.325752832,
+   "serving_peak_reserved_gb": 62.868422656,
+   "end_reserved_minus_allocated_gb": 18.023493632,
+   "n_finished": 8000,
+   "transcripts_sha256": "04340f091c0a172a"
+  },
+  "fp8_12000": {
+   "r": 13,
+   "n": 12000,
+   "decoder": "fused",
+   "base_allocated_gb": 2.594089984,
+   "startup_warmup_peak_allocated_gb": 68.24865024,
+   "startup_warmup_peak_reserved_gb": 79.73371904,
+   "serving_peak_allocated_gb": 67.505033728,
+   "serving_peak_reserved_gb": 73.23254784,
+   "end_reserved_minus_allocated_gb": 14.944559616,
+   "n_finished": 12000,
+   "transcripts_sha256": "32d197a63d3efaae"
+  },
+  "stock_2400": {
+   "r": 13,
+   "n": 2400,
+   "decoder": "stock",
+   "base_allocated_gb": 2.594089984,
+   "startup_warmup_peak_allocated_gb": 29.247871488,
+   "startup_warmup_peak_reserved_gb": 36.297506816,
+   "serving_peak_allocated_gb": 32.157857792,
+   "serving_peak_reserved_gb": 37.520146432,
+   "end_reserved_minus_allocated_gb": 12.0166144,
+   "n_finished": 2400,
+   "transcripts_sha256": "32df4f2267a316a7"
+  }
+ }
+}

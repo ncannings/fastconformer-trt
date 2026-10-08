@@ -1,0 +1,156 @@
+{
+ "spark_85": {
+  "title": "Spark video (docs/media/live_spark.gif, .mp4), recorded 8 Oct 2026",
+  "gpu": "NVIDIA GB10 (DGX Spark)",
+  "note": "45 s acts, one process per act, streams staggered over 10 s; N = round(0.85 x the FP16 arm's C120) = 165, 560, 923; stock = NeMo + gc.freeze, ours = FP16 engine + fused decoder (+ mel graph at 80 ms). A demo act is not a capacity trial: the dashboard adds host work.",
+  "acts": [
+   {
+    "act": "act1",
+    "arm": "stock",
+    "chunk_ms": 80,
+    "streams": 165,
+    "chunks": 41034,
+    "late_chunks": 39260,
+    "wait_ms_p95": 18953,
+    "step_ms_p50": 164,
+    "step_ms_p95": 169,
+    "chunk_latency_ms_excl_algo_p50": 9171,
+    "chunk_latency_ms_excl_algo_p95": 19122,
+    "ended": "stopped at t=45.2 s (stop_at)"
+   },
+   {
+    "act": "act2",
+    "arm": "ours",
+    "chunk_ms": 80,
+    "streams": 165,
+    "chunks": 82191,
+    "late_chunks": 0,
+    "wait_ms_p95": 25,
+    "step_ms_p50": 24,
+    "step_ms_p95": 29,
+    "chunk_latency_ms_excl_algo_p50": 37,
+    "chunk_latency_ms_excl_algo_p95": 51,
+    "ended": "stopped at t=45.0 s (stop_at)"
+   },
+   {
+    "act": "act3",
+    "arm": "stock",
+    "chunk_ms": 320,
+    "streams": 560,
+    "chunks": 28526,
+    "late_chunks": 26240,
+    "wait_ms_p95": 22176,
+    "step_ms_p50": 458,
+    "step_ms_p95": 844,
+    "chunk_latency_ms_excl_algo_p50": 11007,
+    "chunk_latency_ms_excl_algo_p95": 23019,
+    "ended": "stopped at t=45.2 s (stop_at)"
+   },
+   {
+    "act": "act4",
+    "arm": "ours",
+    "chunk_ms": 320,
+    "streams": 560,
+    "chunks": 69980,
+    "late_chunks": 0,
+    "wait_ms_p95": 54,
+    "step_ms_p50": 50,
+    "step_ms_p95": 61,
+    "chunk_latency_ms_excl_algo_p50": 79,
+    "chunk_latency_ms_excl_algo_p95": 117,
+    "ended": "stopped at t=45.0 s (stop_at)"
+   },
+   {
+    "act": "act5",
+    "arm": "stock",
+    "chunk_ms": 1120,
+    "streams": 923,
+    "chunks": 14643,
+    "late_chunks": 12602,
+    "wait_ms_p95": 21445,
+    "step_ms_p50": 2102,
+    "step_ms_p95": 2760,
+    "chunk_latency_ms_excl_algo_p50": 12416,
+    "chunk_latency_ms_excl_algo_p95": 24197,
+    "ended": "stopped at t=47.2 s (stop_at)"
+   },
+   {
+    "act": "act6",
+    "arm": "ours",
+    "chunk_ms": 1120,
+    "streams": 923,
+    "chunks": 32638,
+    "late_chunks": 0,
+    "wait_ms_p95": 67,
+    "step_ms_p50": 51,
+    "step_ms_p95": 78,
+    "chunk_latency_ms_excl_algo_p50": 84,
+    "chunk_latency_ms_excl_algo_p95": 157,
+    "ended": "stopped at t=45.0 s (stop_at)"
+   }
+  ]
+ },
+ "h100": {
+  "title": "H100 video (docs/media/live_h100.gif, .mp4), recorded 7 Oct 2026",
+  "gpu": "NVIDIA H100 80GB HBM3",
+  "note": "45 s acts, one process per act, streams staggered over 10 s; stock = NeMo + gc.freeze with the stock memory fix, decoder pre-warm off (it crashed NeMo's graphs at 384 or more slots on the H100); ours = FP16 engine + fused decoder (+ mel graph at 80 ms). 1.12 s: stock at 2,400 (NVIDIA's published figure), ours at 5,625 (our FP16 C120). A demo act is not a capacity trial.",
+  "acts": [
+   {
+    "act": "act1",
+    "arm": "stock",
+    "chunk_ms": 80,
+    "streams": 760,
+    "chunks": 198945,
+    "late_chunks": 197914,
+    "wait_ms_p95": 18081,
+    "step_ms_p50": 141,
+    "step_ms_p95": 168,
+    "chunk_latency_ms_excl_algo_p50": 8462,
+    "chunk_latency_ms_excl_algo_p95": 18244,
+    "ended": "stopped at t=45.1 s (stop_at)"
+   },
+   {
+    "act": "act2",
+    "arm": "ours",
+    "chunk_ms": 80,
+    "streams": 760,
+    "chunks": 381626,
+    "late_chunks": 0,
+    "wait_ms_p95": 32,
+    "step_ms_p50": 25,
+    "step_ms_p95": 34,
+    "chunk_latency_ms_excl_algo_p50": 42,
+    "chunk_latency_ms_excl_algo_p95": 65,
+    "ended": "stopped at t=45.0 s (stop_at)"
+   },
+   {
+    "act": "act3",
+    "arm": "stock",
+    "chunk_ms": 1120,
+    "streams": 2400,
+    "chunks": 83870,
+    "late_chunks": 0,
+    "wait_ms_p95": 476,
+    "step_ms_p50": 233,
+    "step_ms_p95": 502,
+    "chunk_latency_ms_excl_algo_p50": 497,
+    "chunk_latency_ms_excl_algo_p95": 1084,
+    "ended": "stopped at t=45.5 s (stop_at)"
+   },
+   {
+    "act": "act4",
+    "arm": "ours",
+    "chunk_ms": 1120,
+    "streams": 5625,
+    "chunks": 197621,
+    "late_chunks": 0,
+    "wait_ms_p95": 303,
+    "step_ms_p50": 94,
+    "step_ms_p95": 297,
+    "chunk_latency_ms_excl_algo_p50": 341,
+    "chunk_latency_ms_excl_algo_p95": 599,
+    "ended": "stopped at t=45.2 s (stop_at)"
+   }
+  ]
+ }
+}

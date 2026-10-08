@@ -1,0 +1,14 @@
+{
+ "r": 13,
+ "n": 2400,
+ "encoder": "stock",
+ "decoder": "stock",
+ "base_allocated_gb": 2.594089984,
+ "startup_warmup_peak_allocated_gb": 29.247871488,
+ "startup_warmup_peak_reserved_gb": 36.297506816,
+ "serving_peak_allocated_gb": 32.157857792,
+ "serving_peak_reserved_gb": 37.520146432,
+ "end_reserved_minus_allocated_gb": 12.0166144,
+ "n_finished": 2400,
+ "transcripts_sha256": "32df4f2267a316a7"
+}

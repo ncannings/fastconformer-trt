@@ -19,6 +19,40 @@ in English and across 25 European languages.
 The headline was measured on a single DGX Spark (GB10 Grace Blackwell, sm_121, 128 GB unified memory); results on
 GH200, H100 and B200 datacentre GPUs follow below.
 
+## Live streaming: 3.3x to 4.3x more concurrent streams per GPU
+
+The same approach applied to live transcription with NVIDIA's cache-aware streaming model
+`nvidia/nemotron-3.5-asr-streaming-0.6b`: how many simultaneous real-time streams one GPU serves while keeping every
+stream up to date (at most 0.1% of chunks waiting more than one chunk duration) with p95 final-token latency at most
+1 s, held for 120 s. Earnings-22 calls as the live load, staggered arrivals, a fresh process per trial, rules written
+down and frozen before the final runs. Ours = TensorRT encoder engine + our fused RNN-T decoder; stock = NVIDIA NeMo as shipped
+with gc.freeze (the strongest stock configuration we found).
+
+| Concurrent live streams | Chunk | Stock NeMo | Ours, FP16 | Ours, FP8 |
+|---|---|---|---|---|
+| DGX Spark | 80 ms | 58 | **194** (3.3x) | **239** (4.1x) |
+| DGX Spark | 320 ms | 181 | **658** (3.6x) | **743** (4.1x) |
+| DGX Spark | 1.12 s | 326 | **1,086** (3.3x) | **1,397** (4.3x) |
+| H100 SXM | 1.12 s | 1,507 | **5,625** (3.7x) | **5,937** (3.9x) |
+| H100 SXM | 80 ms | no confirmed figure | **902** | not run |
+
+Every arm is within 2% (relative) of stock's LibriSpeech test-clean WER at the same chunk size: the FP16 engines used
+here at most 0.37% above stock, FP8 up to 1.74% above (a thin margin at 1.12 s). NVIDIA's model card quotes 2,400 streams at 1.12 s and 240 at 80 ms per H100 by its own
+method (median latency); with all streams starting together our harness reproduces those stock figures, and the same
+stock NeMo sustains 1,507 at 1.12 s under the rule above. Method, corrections, NVIDIA comparison and limitations:
+[docs/09-live-streaming.md](docs/09-live-streaming.md). Code: [live/](live/).
+
+![DGX Spark: stock NeMo against our engine at 80 ms, 320 ms and 1.12 s chunks, 85% of our measured capacity](docs/media/live_spark.gif)
+
+DGX Spark, 8 October 2026: stock NeMo and our FP16 arm at 165, 560 and 923 live streams (85% of our measured
+capacity). Ours keeps every stream in real time (0 late chunks); stock falls behind. [MP4](docs/media/live_spark.mp4)
+
+![H100: stock NeMo at 2,400 streams against our engine at 5,625 streams, 1.12 s chunks](docs/media/live_h100.gif)
+
+H100, 7 October 2026: at 80 ms, 760 streams each (stock falls behind, ours 0 late chunks); at 1.12 s, stock at 2,400
+streams (NVIDIA's figure; it kept up for the 45 s act) and ours at 5,625 (0 late chunks).
+[MP4](docs/media/live_h100.mp4)
+
 ## Headline
 
 [parakeet-ultra](https://huggingface.co/moondream/parakeet-ultra) (Moondream's post-trained parakeet-tdt-0.6b-v3:
@@ -207,8 +241,9 @@ engine/                  everything that runs (mounted as /w in the container)
   finetune_stride.py     data helpers, and the distillation used for the pruning experiments
   plugins/               CUDA/CUTLASS kernels, TensorRT plugins, ONNX surgery scripts, unit tests
   probes/                accuracy probes used to choose pruning targets
+live/                    live streaming: multi-stream server harness, TensorRT cache-aware encoder step, fused RNN-T decoder
 docs/                    the engineering notes: every step, its measured effect, and the dead ends
-results/                 headline summaries and per-language FLEURS results
+results/                 headline summaries and per-language FLEURS results; results/live/ for live streaming
 ```
 
 ## Measurement notes
@@ -230,7 +265,8 @@ results/                 headline summaries and per-language FLEURS results
 
 ## Status and limitations
 
-- Offline batch transcription. Streaming is not addressed.
+- The engine above is offline batch transcription. Live streaming (a different, cache-aware model) is covered in
+  [docs/09-live-streaming.md](docs/09-live-streaming.md) and [live/](live/).
 - Utterances up to 60 s per segment (the engine's input profile); longer audio needs segmenting.
 - Measured on the DGX Spark (sm_121), a GH200 and an H100 (sm_90) and a B200 (sm_100).
   The engine build is per machine.
@@ -240,4 +276,6 @@ results/                 headline summaries and per-language FLEURS results
 
 Apache-2.0 (see [LICENSE](LICENSE) and [NOTICE](NOTICE)). Built on NVIDIA NeMo, TensorRT, TensorRT Model Optimizer
 and CUTLASS. Models by NVIDIA (Parakeet) and Moondream (parakeet-ultra), all CC-BY-4.0, downloaded from their owners.
+The live-streaming work uses NVIDIA's nemotron-3.5-asr-streaming-0.6b (OpenMDW-1.1), downloaded from NVIDIA; no
+weights or engines are included here.
 Evaluation data: LibriSpeech, Earnings-22 and FLEURS.
