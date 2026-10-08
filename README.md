@@ -19,7 +19,7 @@ in English and across 25 European languages.
 The headline was measured on a single DGX Spark (GB10 Grace Blackwell, sm_121, 128 GB unified memory); results on
 GH200, H100 and B200 datacentre GPUs follow below.
 
-## Live streaming: 3.3x to 4.3x more concurrent streams per GPU
+## Live streaming: more concurrent real-time streams per GPU, same accuracy
 
 The same approach applied to live transcription with NVIDIA's cache-aware streaming model
 `nvidia/nemotron-3.5-asr-streaming-0.6b`: how many simultaneous real-time streams one GPU serves while keeping every
@@ -34,7 +34,7 @@ with gc.freeze (the strongest stock configuration we found).
 | DGX Spark | 320 ms | 181 | **658** (3.6x) | **743** (4.1x) |
 | DGX Spark | 1.12 s | 326 | **1,086** (3.3x) | **1,397** (4.3x) |
 | H100 SXM | 1.12 s | 1,507 | **5,625** (3.7x) | **5,937** (3.9x) |
-| H100 SXM | 80 ms | no confirmed figure | **902** | not run |
+| H100 SXM | 80 ms | 105 | **902** (8.6x) | not run |
 
 Every arm is within 2% (relative) of stock's LibriSpeech test-clean WER at the same chunk size: the FP16 engines used
 here at most 0.37% above stock, FP8 up to 1.74% above (a thin margin at 1.12 s). NVIDIA's model card quotes 2,400 streams at 1.12 s and 240 at 80 ms per H100 by its own
