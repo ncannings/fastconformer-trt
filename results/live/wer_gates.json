@@ -273,6 +273,23 @@
    "rel_to_stock_pct": 1.25,
    "gate_limit_pct": 3.085,
    "gate_pass": true
+  },
+  {
+   "gpu": "NVIDIA H100 80GB HBM3",
+   "chunk_ms": 80,
+   "arm": "FP8 + fused decoder + mel graph (engine of the C120 sweep)",
+   "wer_pct": 3.821,
+   "wer_exact": 3.820551019253616,
+   "n_utterances": 2620,
+   "engine": "steady_fp8_b2048.plan",
+   "decoder": "fused",
+   "cache_dtype": "float16",
+   "date": "2026-10-08",
+   "source_file": "h100 2026-10-08 v7: wer_fp8fusedmg_r0.json",
+   "stock_wer_pct": 3.794,
+   "rel_to_stock_pct": 0.7,
+   "gate_limit_pct": 3.87,
+   "gate_pass": true
   }
  ]
 }

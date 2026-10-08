@@ -11,7 +11,7 @@ encoder engine and decoder, under measurement rules that were written down and f
 | NVIDIA DGX Spark (GB10) | 80 ms | 58 | **194** (3.3x) | **239** (4.1x) |
 | NVIDIA DGX Spark (GB10) | 320 ms | 181 | **658** (3.6x) | **743** (4.1x) |
 | NVIDIA DGX Spark (GB10) | 1.12 s | 326 | **1,086** (3.3x) | **1,397** (4.3x) |
-| NVIDIA H100 80GB HBM3 (SXM) | 80 ms | 105 | **902** (8.6x) | not run |
+| NVIDIA H100 80GB HBM3 (SXM) | 80 ms | 105 | **902** (8.6x) | **956** (9.1x) |
 | NVIDIA H100 80GB HBM3 (SXM) | 1.12 s | 1,507 | **5,625** (3.7x) | **5,937** (3.9x) |
 
 Ours = TensorRT encoder engine + our fused RNN-T decoder (+ the mel front end as one CUDA graph at 80 ms). Accuracy:
@@ -193,8 +193,9 @@ mel graph left the FP8 WER unchanged (3.828 with and without, previous decoder).
 RunPod, one NVIDIA H100 80GB HBM3 (SXM, 700 W limit, driver 580.126.09), the same NeMo 26.06 software (x86) run
 natively on the pod, engines built on the pod, every trial in a fresh process under the same rules. Two pods on
 7 October, v4 (our arms, `results/live/raw/h100_20261007_v4/`) and v5 (stock with the memory fix,
-`results/live/raw/h100_20261007_v5/`), and a third on 8 October, v6 (stock at 80 ms,
-`results/live/raw/h100_20261008_v6/`), summarised in [results/live/c120_h100.json](../results/live/c120_h100.json).
+`results/live/raw/h100_20261007_v5/`), a third on 8 October, v6 (stock at 80 ms,
+`results/live/raw/h100_20261008_v6/`), and a fourth the same day, v7 (FP8 at 80 ms, the same settings as the
+FP16 80 ms arm, `results/live/raw/h100_20261008_v7/`), summarised in [results/live/c120_h100.json](../results/live/c120_h100.json).
 
 | Chunk | Arm | C120 | vs stock | Late chunks in the 120 s trial at C120 | Final-token p50 / p95 (ms) | A | B |
 |---|---|---|---|---|---|---|---|
@@ -203,12 +204,13 @@ natively on the pod, engines built on the pod, every trial in a fresh process un
 | 1.12 s | FP8 + fused | **5,937** | **3.9x** | 0 of 641,196 | 156 / 577 | 5,937 | 5,937 |
 | 80 ms | stock + gc.freeze (8 Oct) | 105 | | 103 of 157,605 | 61 / 105 | 100 | none |
 | 80 ms | FP16 + fused + mel graph | **902** | **8.6x** | 41 of 1,353,902 | 20 / 81 | 902 | none |
+| 80 ms | FP8 + fused + mel graph (8 Oct) | **956** | **9.1x** | 0 of 1,434,956 | 19 / 56 | 956 | 956 |
 
 Stock at 80 ms needed two sweeps. The first (v5, 7 October, from 112 streams) found no C120: 60 s trials passed up
 to 245, but every 120 s confirmation failed (245, 220, 198, 178 and 160) before the time ran out. The second (v6,
 8 October, a third pod, decoder pre-warm on, from 100 streams, `results/live/raw/h100_20261008_v6/`) passed 60 s
-trials up to 180 and confirmed 105 over 120 s after 120 s failures at 180, 162, 145, 130 and 117. The 8.6x at 80 ms
-therefore compares runs on two pods of the same type; it is large mainly because stock's 120 s trials degrade
+trials up to 180 and confirmed 105 over 120 s after 120 s failures at 180, 162, 145, 130 and 117. The 8.6x and 9.1x at 80 ms
+therefore compare runs on different pods of the same type; both are large mainly because stock's 120 s trials degrade
 (section 4).
 
 Memory is not the limit at these N on the H100: our arms served 12,000 streams at 1.12 s for 20 s with at most 73 GB
@@ -219,7 +221,7 @@ Accuracy on the H100, test-clean through the harness (gate: within 2% of the H10
 
 | Chunk | Stock NeMo | FP16 + fused (engine used in the sweep) | Same arm, engine rebuilt on the second pod | FP8 + fused | Limit |
 |---|---|---|---|---|---|
-| 80 ms | 3.794 | 3.790 (-0.10%, with mel graph) | 3.798 (+0.10%) | not run | 3.870 |
+| 80 ms | 3.794 | 3.790 (-0.10%, with mel graph) | 3.798 (+0.10%) | 3.821 (+0.70%, with mel graph, 8 Oct) | 3.870 |
 | 1.12 s | 3.025 | 3.036 (+0.37%) | 3.046 (+0.69%) | 3.062 (+1.25%) | 3.085 |
 
 TensorRT engine builds are not bit-for-bit repeatable (tactic selection), which is why the two FP16 engines built on
@@ -284,7 +286,7 @@ trial: the dashboard adds host work. Per-act counts: [results/live/videos.json](
   layers in FP16) did not give a real margin. The FP16 engine is the arm with a clear margin and is the one we would
   deploy by default; FP8 adds 6 to 29% more streams.
 - **Stock at 80 ms on the H100** degrades over 120 s trials (section 4): it passes 60 s trials up to 180 to 245
-  streams but confirms only 105 over 120 s. The 8.6x ratio at 80 ms rests on that behaviour of NeMo's decoder in
+  streams but confirms only 105 over 120 s. The 8.6x and 9.1x ratios at 80 ms rest on that behaviour of NeMo's decoder in
   our harness; under NVIDIA's aligned-start method stock keeps up at 240 (section 8).
 - **Single runs.** Each C120 comes from one sweep. Nearby N pass and fail non-monotonically near the edge, and the
   two aligned-start 80 ms runs at 960 streams disagreed. Treat differences of a few percent as noise.

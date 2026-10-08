@@ -119,6 +119,9 @@ def main() -> None:
     v6 = os.path.join(RAW, "h100_20261008_v6", "sweep_stockgc_pw_r0.jsonl")
     if os.path.exists(v6):
         h100["stockgc_pw_r0"] = arm_summary(v6)
+    v7 = os.path.join(RAW, "h100_20261008_v7", "sweep_fp8fusedmg_r0.jsonl")
+    if os.path.exists(v7):
+        h100["fp8fusedmg_r0"] = arm_summary(v7)
     nv = {}
     d = os.path.join(RAW, "h100_nvidia_method")
     for f in sorted(os.listdir(d)):

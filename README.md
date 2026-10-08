@@ -34,7 +34,7 @@ with gc.freeze (the strongest stock configuration we found).
 | DGX Spark | 320 ms | 181 | **658** (3.6x) | **743** (4.1x) |
 | DGX Spark | 1.12 s | 326 | **1,086** (3.3x) | **1,397** (4.3x) |
 | H100 SXM | 1.12 s | 1,507 | **5,625** (3.7x) | **5,937** (3.9x) |
-| H100 SXM | 80 ms | 105 | **902** (8.6x) | not run |
+| H100 SXM | 80 ms | 105 | **902** (8.6x) | **956** (9.1x) |
 
 Every arm is within 2% (relative) of stock's LibriSpeech test-clean WER at the same chunk size: the FP16 engines used
 in the sweeps at most 0.37% above stock (an engine rebuilt on a second H100 pod, +0.69%), FP8 up to 1.74% above (a thin margin at 1.12 s). NVIDIA's model card quotes 2,400 streams at 1.12 s and 240 at 80 ms per H100 by its own
