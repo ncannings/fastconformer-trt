@@ -16,7 +16,7 @@ encoder engine and decoder, under measurement rules that were written down and f
 
 Ours = TensorRT encoder engine + our fused RNN-T decoder (+ the mel front end as one CUDA graph at 80 ms). Accuracy:
 every arm is within 2% (relative) of stock NeMo's LibriSpeech test-clean WER at the same chunk size on the same GPU;
-the FP16 engines used in these runs are at most 0.37% above stock and FP8 up to 1.74% above (sections 6 and 7).
+the FP16 engines used in the sweeps are at most 0.37% above stock (an engine rebuilt on a second H100 pod, +0.69%) and FP8 up to 1.74% above (sections 6 and 7).
 Single runs; Earnings-22 calls as the live load; limitations in section 10. Summaries: [results/live/](../results/live/).
 
 NVIDIA's model card quotes 2,400 streams at 1.12 s and 240 at 80 ms on one H100, by its own method (median

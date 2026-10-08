@@ -37,7 +37,7 @@ with gc.freeze (the strongest stock configuration we found).
 | H100 SXM | 80 ms | 105 | **902** (8.6x) | not run |
 
 Every arm is within 2% (relative) of stock's LibriSpeech test-clean WER at the same chunk size: the FP16 engines used
-here at most 0.37% above stock, FP8 up to 1.74% above (a thin margin at 1.12 s). NVIDIA's model card quotes 2,400 streams at 1.12 s and 240 at 80 ms per H100 by its own
+in the sweeps at most 0.37% above stock (an engine rebuilt on a second H100 pod, +0.69%), FP8 up to 1.74% above (a thin margin at 1.12 s). NVIDIA's model card quotes 2,400 streams at 1.12 s and 240 at 80 ms per H100 by its own
 method (median latency); with all streams starting together our harness reproduces those stock figures, and the same
 stock NeMo sustains 1,507 at 1.12 s under the rule above. Method, corrections, NVIDIA comparison and limitations:
 [docs/09-live-streaming.md](docs/09-live-streaming.md). Code: [live/](live/).
